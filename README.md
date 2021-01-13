@@ -4,18 +4,21 @@ This repository contains a number of convolutional neural network visualization 
 
 **Note**: I removed cv2 dependencies and moved the repository towards PIL. A few things might be broken (although I tested all methods), I would appreciate if you could create an issue if something does not work.
 
+**Note**: The code in this repository was tested with torch version 0.4.1 and some of the functions may not work as intended in later versions. Although it shouldn't be too much of an effort to make it work, I have no plans at the moment to make the code in this repository compatible with the latest version because I'm still using 0.4.1.
+
 ## Implemented Techniques
 
 * [Gradient visualization with vanilla backpropagation](#gradient-visualization)
 * [Gradient visualization with guided backpropagation](#gradient-visualization) [1]
 * [Gradient visualization with saliency maps](#gradient-visualization) [4]
-* [Gradient-weighted class activation mapping](#gradient-visualization) [2] 
+* [Gradient-weighted class activation mapping](#gradient-visualization) [3] (Generalization of [2]) 
 * [Guided, gradient-weighted class activation mapping](#gradient-visualization) [3]
+* [Score-weighted class activation mapping](#gradient-visualization) [15] (Gradient-free generalization of [2])
 * [Smooth grad](#smooth-grad) [8]
 * [CNN filter visualization](#convolutional-neural-network-filter-visualization) [9]
 * [Inverted image representations](#inverted-image-representations) [5]
 * [Deep dream](#deep-dream) [10]
-* [Class specific image generation](#class-specific-image-generation) [4]
+* [Class specific image generation](#class-specific-image-generation) [4] [14]
 * [Grad times image](#grad-times-image) [12]
 * [Integrated gradients](#gradient-visualization) [13]
 
@@ -49,7 +52,7 @@ If you find the code in this repository useful for your research consider citing
 	  publisher = {GitHub},
 	  journal = {GitHub repository},
 	  howpublished = {\url{https://github.com/utkuozbulak/pytorch-cnn-visualizations}},
-	  commit = {3460e7f014f52f4099c1a4864e1534de9cc901e7}
+	  commit = {47c6cd2121b4d0bcbe76f63abe9e13c5fb1ea0ff}
 	}
 
 
@@ -120,6 +123,24 @@ If you find the code in this repository useful for your research consider citing
 			<td width="27%" > <img src="https://raw.githubusercontent.com/utkuozbulak/pytorch-cnn-visualizations/master/results/gradient_visualizations/snake_Cam_On_Image.jpg"> </td>
 			<td width="27%"> <img src="https://raw.githubusercontent.com/utkuozbulak/pytorch-cnn-visualizations/master/results/gradient_visualizations/cat_dog_Cam_On_Image.jpg"> </td>
 			<td width="27%"> <img src="https://raw.githubusercontent.com/utkuozbulak/pytorch-cnn-visualizations/master/results/gradient_visualizations/spider_Cam_On_Image.jpg"> </td>
+		</tr>
+    <tr>
+			<td width="19%" align="center"> Score-weighted Class Activation Map <br />  <br /> (Score-CAM)</td>
+			<td width="27%" > <img src="https://raw.githubusercontent.com/utkuozbulak/pytorch-cnn-visualizations/master/results/gradient_visualizations/snake_ScoreCAM_Grayscale.png"> </td>
+			<td width="27%"> <img src="https://raw.githubusercontent.com/utkuozbulak/pytorch-cnn-visualizations/master/results/gradient_visualizations/cat_dog_ScoreCAM_Grayscale.png"> </td>
+			<td width="27%"> <img src="https://raw.githubusercontent.com/utkuozbulak/pytorch-cnn-visualizations/master/results/gradient_visualizations/spider_ScoreCAM_Grayscale.png"> </td>
+		</tr>
+    <tr>
+			<td width="19%" align="center"> Score-weighted Class Activation Heatmap <br />  <br /> (Score-CAM)</td>
+			<td width="27%" > <img src="https://raw.githubusercontent.com/utkuozbulak/pytorch-cnn-visualizations/master/results/gradient_visualizations/snake_ScoreCAM_Heatmap.png"> </td>
+			<td width="27%"> <img src="https://raw.githubusercontent.com/utkuozbulak/pytorch-cnn-visualizations/master/results/gradient_visualizations/cat_dog_ScoreCAM_Heatmap.png"> </td>
+			<td width="27%"> <img src="https://raw.githubusercontent.com/utkuozbulak/pytorch-cnn-visualizations/master/results/gradient_visualizations/spider_ScoreCAM_Heatmap.png"> </td>
+		</tr>
+    <tr>
+			<td width="19%" align="center"> Score-weighted Class Activation Heatmap on Image <br />  <br /> (Score-CAM)</td>
+			<td width="27%" > <img src="https://raw.githubusercontent.com/utkuozbulak/pytorch-cnn-visualizations/master/results/gradient_visualizations/snake_ScoreCAM_On_Image.png"> </td>
+			<td width="27%"> <img src="https://raw.githubusercontent.com/utkuozbulak/pytorch-cnn-visualizations/master/results/gradient_visualizations/cat_dog_ScoreCAM_On_Image.png"> </td>
+			<td width="27%"> <img src="https://raw.githubusercontent.com/utkuozbulak/pytorch-cnn-visualizations/master/results/gradient_visualizations/spider_ScoreCAM_On_Image.png"> </td>
 		</tr>
     <tr>
 			<td width="19%" align="center"> Colored Guided Gradient-weighted Class Activation Map <br />  <br /> (Guided-Grad-CAM)</td>
@@ -305,7 +326,7 @@ Deep dream is technically the same operation as layer visualization the only dif
 
 
 ## Class Specific Image Generation
-This operation produces different outputs based on the model and the applied regularization method. Below, are some samples produced with **VGG19** incorporated with Gaussian blur every other iteration. The quality of generated images also depend on the model, **AlexNet** generally has green(ish) artifacts but VGGs produce (kid of) better images. Note that these images are generated with regular CNNs with optimizing the input and **not with GANs**.
+This operation produces different outputs based on the model and the applied regularization method. Below, are some samples produced with **VGG19** incorporated with Gaussian blur every other iteration (see [14] for details). The quality of generated images also depend on the model, **AlexNet** generally has green(ish) artifacts but VGGs produce (kind of) better images. Note that these images are generated with regular CNNs with optimizing the input and **not with GANs**.
 
 <table border=0 width="50px" >
 	<tbody>
@@ -338,9 +359,11 @@ The samples below show the produced image with no regularization, l1 and l2 regu
 
 Produced samples can further be optimized to resemble the desired target class, some of the operations you can incorporate to improve quality are; blurring, clipping gradients that are below a certain treshold, random color swaps on some parts, random cropping the image, forcing generated image to follow a path to force continuity.
 
+Some of these techniques are implemented in *generate_regularized_class_specific_samples.py* (courtesy of [alexstoken](https://github.com/alexstoken)).
+
 ## Requirements:
 ```
-torch >= 0.4.0
+torch == 0.4.1
 torchvision >= 0.1.9
 numpy >= 1.13.0
 matplotlib >= 1.5
@@ -375,3 +398,6 @@ PIL >= 1.1.7
 
 [13] M. Sundararajan, A. Taly, Q. Yan. *Axiomatic Attribution for Deep Networks* https://arxiv.org/abs/1703.01365
 
+[14] J. Yosinski, J. Clune, A. Nguyen, T. Fuchs, Hod Lipson, *Understanding Neural Networks Through Deep Visualization* https://arxiv.org/abs/1506.06579
+
+[15] H. Wang, Z. Wang, M. Du, F. Yang, Z. Zhang, S. Ding, P. Mardziel, X. Hu. *Score-CAM: Score-Weighted Visual Explanations for Convolutional Neural Networks* https://arxiv.org/abs/1910.01279
